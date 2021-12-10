@@ -1,0 +1,512 @@
+<title>Project 2 | Deniss Akmaikin</title>
+<head>
+<link rel="stylesheet" href="main.css">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+
+<div class="header">
+  <h1>Cinema timetable</h1>
+  <h4><button onclick="movierandomizer()">Randomizer</button> | <button onclick="searchbyname()">Movie show search engine</button></h4>
+</div>
+
+<div class="ex1">
+<center>
+<form>
+  <label for="choice">Choose your city:</label>
+  <select name="choice" id="CChoice" onchange="CityChoice()">
+	   <option value="" disabled selected>Select your option</option>
+      <option value="Helsinki">Helsinki</option>
+      <option value="Espoo">Espoo</option>
+	  <option value="Tampere">Tampere</option>
+	  <option value="Others">Others</option>
+	 </select>
+ <select style="display:none;" id="cinemas" onchange="CinemaChoice()"></select>	 
+ <select style="display:none;" id="cdate" onchange="GetData()">
+	  <option value="" disabled selected>Select your option</option>
+      <option value="Today">Today</option>
+      <option value="Tomorrow">Tomorrow</option>
+	  <option value="DAT">Day after tomorrow</option>
+ </select>	 
+</form>
+
+<table id="table"></table>
+</center>
+</div>
+
+<!-- Modals below -->
+
+<!-- Movie details modal below [+ randomizer window] -->
+<div class="w3-container">
+  <div id="id01" class="w3-modal">
+    <div class="w3-modal-content">
+      <div class="w3-container">
+        <span onclick="document.getElementById('id01').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+        <p>
+		<center>
+		<img id="movieimg" src="">
+		<h3><p id="movietitle">Title</p></h3>
+		<h4><p id="moviefinnishtitle">Finnish title</p></h4>
+		<p id="moviegenre">Movie genre</p>
+		<p id="movieleng">Movie lenght</p>
+		<p id="movieprod">Production year</p>
+		<p id="movierate">Rating</p>
+		<p id="movielink">Movie link</p>
+		</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Search by name window below -->
+<div class="w3-container">
+  <div id="id02" class="w3-modal">
+    <div class="w3-modal-content">
+      <div class="w3-container">
+        <span onclick="document.getElementById('id02').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+        
+		<center>
+		<p><input class="searchinput" type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for show.." title="Type in a name"></p>
+		<ul id="myUL">
+		</ul>
+		
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+
+// some global variables that are used for storing data like dates, links and chosen options for further usage.
+
+let chosencity;
+let chosencinema;
+let chosendate;
+
+let finaldate;
+let finallink;
+
+// this variable is used when updating link and reuploading XML while if user changes the cinema
+
+let allowtoreset = 0;
+
+function CityChoice(){  // Getting the user input, fetching city of choice
+
+	chosencity = document.getElementById("CChoice").value;
+	
+	// Variables that are storing cinemas in each city 
+	
+	heladd = "<option value='' disabled selected>Select your option</option><option value='1045'>ITIS</option><option value='1031'>KINOPALATSI</option><option value='1032'>MAXIM</option><option value='1033'>TENNISPALATSI</option>";
+	esboadd = "<option value='' disabled selected>Select your option</option><option value='1039'>OMENA</option><option value='1038'>SELLO</option>";
+	tamperedd = "<option value='' disabled selected>Select your option</option><option value='1034'>CINE ATLAS</option><option value='1035'>PLEVNA</option></option>";
+	othersadd = "<option value='' disabled selected>Select your option</option><option value='1013'>Vantaa: FLAMINGO</option><option value='1015'>Jyväskylä: FANTASIA</option><option value='1016'>Kuopio: SCALA</option><option value='1017'>Lahti: KUVAPALATSI</option><option value='1041'>Lappeenranta: STRAND</option><option value='1018'>Oulu: PLAZA</option><option value='1019'>Pori: PROMENADI</option><option value='1022'>Turku: KINOPALATSI</option>";
+	
+	// Deleting all options before user can see them
+
+	document.getElementById("cinemas").innerHTML -= heladd; 
+	document.getElementById("cinemas").innerHTML -= esboadd; 
+	document.getElementById("cinemas").innerHTML -= othersadd; 
+	document.getElementById("cinemas").innerHTML -= tamperedd; 
+	
+	// Adding needed options when user made his choice in menu
+
+	if (chosencity == "Helsinki") {
+		document.getElementById("cinemas").innerHTML += heladd;   
+	} else if (chosencity == "Espoo") {
+		document.getElementById("cinemas").innerHTML += esboadd; 
+	} else if (chosencity == "Tampere") {
+		document.getElementById("cinemas").innerHTML += tamperedd; 
+	} else {
+		document.getElementById("cinemas").innerHTML += othersadd;  
+	}
+	
+	// opening next choice section
+	
+	document.getElementById("cinemas").style.display = ""
+}
+
+	// Opening date option
+	
+function CinemaChoice(){ 
+	chosencinema = document.getElementById("cinemas").value;
+	document.getElementById("cdate").style.display = "";
+	
+	if (allowtoreset == 1) {
+		finallink = "https://www.finnkino.fi/xml/Schedule/?area=" + chosencinema + "&dt=0" + finaldate;
+		GetCinemas();
+	}
+	
+	
+	
+}
+
+	// Getting the date, depending on user's choice
+
+function GetData() {
+
+		// Getting system's today date
+
+		const d = new Date();
+		var today = new Date();
+		year = today.getFullYear();
+		month = String(today.getMonth() + 1).padStart(2, '0');
+		day = String(today.getDate()).padStart(2, '0');
+		
+		// Getting the user's choice
+		
+		chosendate = document.getElementById("cdate").value;
+		
+		// Changing the date if user chose tomorrow or day after tomorrow
+		
+		if (chosendate == "Today") {
+			finaldate = day + "." + month + "." + year;
+		} else if (chosendate == "Tomorrow") {
+			finaldate = day + 1 + "." + month + "." + year;
+		} else {
+			finaldate = day + 2 + "." + month + "." + year;
+		}
+		
+		// Generating final link to make an AJAX request and get XML 
+		// Link consist out of chosen cinema ID and final date which is generated above
+		
+		finallink = "https://www.finnkino.fi/xml/Schedule/?area=" + chosencinema + "&dt=0" + finaldate;
+		allowtoreset = 1;
+		
+		// Making the request
+		
+		GetCinemas();
+
+		
+}
+
+
+		// This function fetches all the data
+
+function GetCinemas() {
+
+let xhr = new XMLHttpRequest();
+xhr.open('GET', finallink);
+
+// request state change event
+xhr.onreadystatechange = function() {
+
+  // request completed?
+  if (xhr.readyState !== 4) return;
+
+  if (xhr.status === 200) {
+	
+    // request successful - show response
+	var xmlDoc= xhr.responseXML; 
+	var table = "<tr><th>Movie Name</th><th>Start Time</th><th>More info</th></tr>";
+	
+	// getting all the info about the movie that is needed 
+	
+	var cinemaname =  xmlDoc.getElementsByTagName("OriginalTitle");
+	var cinematime =  xmlDoc.getElementsByTagName("dttmShowStart");
+	var eventid = xmlDoc.getElementsByTagName("EventID");
+	
+
+	
+	// printing table 
+
+	var ql = eventid.length;
+	for (i = 0; i < ql; i++) {
+		cname = cinemaname[i].childNodes[0].nodeValue;
+		ctime = cinematime[i].childNodes[0].nodeValue;
+		eid = eventid[i].childNodes[0].nodeValue;
+		
+		// this variable makes the date slice, so time looks more pretty for user 
+		var correctedtime = ctime.slice(11, 19);
+		table += "<tr><td>" + cname + "</td><td>" + correctedtime + "</td><td>" + "<button id='mybtn' class='btn' onclick='openmodal(" + eid + ")'>Details</button></td></tr>";
+		
+
+	}
+	// showing a table to the end user
+	document.getElementById("table").innerHTML = table;
+	xhr.abort()
+  }
+  else {
+    // request error
+    console.log('HTTP error', xhr.status, xhr.statusText);
+  }
+};
+
+
+
+// start request
+xhr.send();
+
+}
+
+// This function opens the modal [popup]
+
+function openmodal(eid) {
+	document.getElementById('id01').style.display='block';
+	console.log("Eid: " + eid + " sent.")
+	getmovieinfo(eid);
+	
+}
+
+// This function fetches an information about the movie when "Details" button is clicked.
+
+function getmovieinfo(eid) {
+	
+	let xhr = new XMLHttpRequest();
+xhr.open('GET', finallink);
+
+// request state change event
+xhr.onreadystatechange = function() {
+
+  // request completed?
+  if (xhr.readyState !== 4) return;
+
+  if (xhr.status === 200) {
+	
+    // request successful - show response
+	var xmlDoc= xhr.responseXML; 
+
+// All data is needed is stored in these variables 
+	
+	var cinemaname1 =  xmlDoc.getElementsByTagName("OriginalTitle");
+	var moviefinnishname = xmlDoc.getElementsByTagName("Title");
+	var moviegenrename = xmlDoc.getElementsByTagName("Genres");
+	var movielinkname = xmlDoc.getElementsByTagName("EventURL"); 
+	var eventid = xmlDoc.getElementsByTagName("EventID");
+	var movieimg = xmlDoc.getElementsByTagName("EventMediumImagePortrait");
+	var lim = xmlDoc.getElementsByTagName("LengthInMinutes");
+	var prodyear = xmlDoc.getElementsByTagName("ProductionYear");
+	var rating = xmlDoc.getElementsByTagName("Rating");
+	
+	
+	var ql = eventid.length;
+	
+// This loop looks for a movie with same event ID and then takes all the information
+	
+	for (i = 0; i < ql; i++) {
+		eid2 = eventid[i].childNodes[0].nodeValue;
+		var k;
+		if (eid2 == eid) {
+		
+			// Storing the data in variables
+		
+			k = i;
+			cname = cinemaname1[k].childNodes[0].nodeValue;
+			mfn = moviefinnishname[k].childNodes[0].nodeValue;
+			mgn = moviegenrename[k].childNodes[0].nodeValue;
+			mln =  movielinkname[k].childNodes[0].nodeValue;
+			mimg =  movieimg[k].childNodes[0].nodeValue;
+			mlim =  lim[k].childNodes[0].nodeValue;
+			mprodyear =  prodyear[k].childNodes[0].nodeValue;
+			mrating =  rating[k].childNodes[0].nodeValue;
+			
+			// Adding the information to the "Details" modal
+			
+			document.getElementById("movietitle").innerHTML = "Original title: " + cname;
+			document.getElementById("moviefinnishtitle").innerHTML = "Finnish title: " + mfn;
+			document.getElementById("moviegenre").innerHTML = "Genres: " + mgn;
+			document.getElementById("movielink").innerHTML = "<a href='" + mln + "' class='btn'>Get the ticket!</a>";
+			document.getElementById("movieleng").innerHTML = "Length in minutes: " + mlim;
+			document.getElementById("movierate").innerHTML = "Movie age rating: " + mrating;
+			document.getElementById("movieprod").innerHTML = "Movie production year: " + mprodyear;
+			document.getElementById("movieimg").src = mimg;
+			break;
+		}
+	}
+	xhr.abort()
+  }
+  else {
+    // request error
+    console.log('HTTP error', xhr.status, xhr.statusText);
+  }
+};
+
+
+
+// start request
+xhr.send();
+
+}
+
+// This function exists to randomly choose a cinema out of array and random movie in that cinema 
+
+function movierandomizer() {
+	
+		// Array of some cinemas, generating random number and then picking an element from array with this random number
+		const cinemaslist = ["1014", "1012", "1039", "1038", "1045", "1031", "1032", "1033", "1013", "1015", "1016", "1017"];
+		var arraylength = cinemaslist.length;
+		var randomnumber = Math.floor(Math.random() * arraylength);
+		var randommovie = cinemaslist[randomnumber];
+
+		// Getting the today date
+		const d = new Date();
+		var today = new Date();
+		year = today.getFullYear();
+		month = String(today.getMonth() + 1).padStart(2, '0');
+		day = String(today.getDate()).padStart(2, '0');
+	
+		var datetoday = day + "." + month + "." + year;
+		
+		// Making the link
+		var mylink = "https://www.finnkino.fi/xml/Schedule/?area="+randommovie+"&dt="+datetoday;
+
+
+let xhr = new XMLHttpRequest();
+xhr.open('GET', mylink);
+
+// request state change event
+xhr.onreadystatechange = function() {
+
+  // request completed?
+  if (xhr.readyState !== 4) return;
+
+  if (xhr.status === 200) {
+	
+    // request successful - show response
+	var xmlDoc= xhr.responseXML; 
+	// getting all the info about the movie that is needed 
+	var cinemaname =  xmlDoc.getElementsByTagName("OriginalTitle");
+	var eventid = xmlDoc.getElementsByTagName("EventID");
+	var moviefinnishname = xmlDoc.getElementsByTagName("Title");
+	var moviegenrename = xmlDoc.getElementsByTagName("Genres");
+	var movielinkname = xmlDoc.getElementsByTagName("EventURL"); 
+	var movieimg = xmlDoc.getElementsByTagName("EventMediumImagePortrait");
+	var lim = xmlDoc.getElementsByTagName("LengthInMinutes");
+	var prodyear = xmlDoc.getElementsByTagName("ProductionYear");
+	var rating = xmlDoc.getElementsByTagName("Rating");
+	var ql = eventid.length;
+	// picking random movie 
+	var randommovienumber = Math.floor(Math.random() * ql);
+	// printing table 
+	
+			evid = eventid[randommovienumber].childNodes[0].nodeValue;
+			cname = cinemaname[randommovienumber].childNodes[0].nodeValue;
+			mfn = moviefinnishname[randommovienumber].childNodes[0].nodeValue;
+			mgn = moviegenrename[randommovienumber].childNodes[0].nodeValue;
+			mln =  movielinkname[randommovienumber].childNodes[0].nodeValue;
+			mimg =  movieimg[randommovienumber].childNodes[0].nodeValue;
+			mlim =  lim[randommovienumber].childNodes[0].nodeValue;
+			mprodyear =  prodyear[randommovienumber].childNodes[0].nodeValue;
+			mrating =  rating[randommovienumber].childNodes[0].nodeValue;
+			console.log(evid);
+			
+			document.getElementById("movietitle").innerHTML = "Original title: " + cname;
+			document.getElementById("moviefinnishtitle").innerHTML = "Finnish title: " + mfn;
+			document.getElementById("moviegenre").innerHTML = "Genres: " + mgn;
+			document.getElementById("movielink").innerHTML = "<a href='" + mln + "' class='btn'>Get the ticket!</a>";
+			document.getElementById("movieleng").innerHTML = "Length in minutes: " + mlim;
+			document.getElementById("movierate").innerHTML = "Movie age rating: " + mrating;
+			document.getElementById("movieprod").innerHTML = "Movie production year: " + mprodyear;
+			document.getElementById("movieimg").src = mimg;
+			
+			document.getElementById('id01').style.display='block';
+	
+	
+	xhr.abort()
+  }
+  else {
+    // request error
+    console.log('HTTP error', xhr.status, xhr.statusText);
+  }
+};
+		// start request
+		xhr.send();
+	}
+	
+	// This function allows user to find a name by movie in search engine
+	
+function searchbyname() {
+	// opening modal
+	document.getElementById('id02').style.display='block';
+		
+		// Getting the today date
+		const d = new Date();
+		var today = new Date();
+		year = today.getFullYear();
+		month = String(today.getMonth() + 1).padStart(2, '0');
+		day = String(today.getDate()).padStart(2, '0');
+	
+		var datetoday = day + "." + month + "." + year;
+	
+	// making the link
+	var newlink = "https://www.finnkino.fi/xml/Schedule/?area=1002&dt=" + datetoday;
+	
+	
+	// retrieving lists of movies
+	let xhr = new XMLHttpRequest();
+	xhr.open('GET', newlink);
+
+// request state change event
+xhr.onreadystatechange = function() {
+
+  // request completed?
+  if (xhr.readyState !== 4) return;
+
+  if (xhr.status === 200) {
+	
+    // request successful - show response
+	var xmlDoc= xhr.responseXML; 
+	
+	// getting all the info about the movie that is needed 
+	
+	var cinemaname =  xmlDoc.getElementsByTagName("OriginalTitle");
+	var cinematime =  xmlDoc.getElementsByTagName("dttmShowStart");
+	var eventid = xmlDoc.getElementsByTagName("EventID");
+	var theatre = xmlDoc.getElementsByTagName("Theatre");
+	var eventlink = xmlDoc.getElementsByTagName("ShowURL");
+	
+	var movieoption = "";
+
+	
+	// printing table 
+
+	var ql = eventid.length;
+	for (i = 0; i < ql; i++) {
+		cname = cinemaname[i].childNodes[0].nodeValue;
+		theatrename = theatre[i].childNodes[0].nodeValue;
+		evlink = eventlink[i].childNodes[0].nodeValue;
+		ctime = cinematime[i].childNodes[0].nodeValue;
+		var correctedtime = ctime.slice(11, 19);
+		movieoption += "<li><a href=" + evlink + ">" + cname + " (" + theatrename + ") | Time: " + correctedtime + " </a></li>"
+	}
+	document.getElementById("myUL").innerHTML += movieoption;
+	xhr.abort()
+  }
+  else {
+    // request error
+    console.log('HTTP error', xhr.status, xhr.statusText);
+  }
+};
+
+
+
+// start request
+xhr.send();
+	}
+
+// This function makes the search in search engine my comparing user input and actual items. 
+
+function myFunction() {
+    var input, filter, ul, li, a, i, txtValue;
+    input = document.getElementById("myInput");
+    filter = input.value.toUpperCase();
+    ul = document.getElementById("myUL");
+    li = ul.getElementsByTagName("li");
+    for (i = 0; i < li.length; i++) {
+        a = li[i].getElementsByTagName("a")[0];
+        txtValue = a.textContent || a.innerText;
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            li[i].style.display = "";
+        } else {
+            li[i].style.display = "none";
+        }
+    }
+}
+
+</script>
+
+</body>
